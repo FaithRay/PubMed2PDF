@@ -9,9 +9,15 @@ import urllib
 
 import requests
 from bs4 import BeautifulSoup
+from metapub import PubMedFetcher
 
 logger = logging.getLogger(__name__)
 
+
+def search_by_keyword(keyword):
+    fetch = PubMedFetcher()
+    pmids = fetch.pmids_for_query(keyword, retmax=1000)
+    return pmids
 
 def getMainUrl(url):
     return "/".join(url.split("/")[:3])

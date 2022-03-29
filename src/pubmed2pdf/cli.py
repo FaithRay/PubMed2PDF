@@ -19,6 +19,7 @@ def main():
 @main.command()
 @click.option('--pmids', help='Comma separated list of pmids to fetch', type=str)
 @click.option('--pmidsfile', help='File with pmids to fetch inside', type=click.Path(exists=True))
+@click.option('--keyword', help='A keyword used to search and then fetch', type=str)
 @click.option('--out', help='Output directory for fetched articles', default=DATA_DIR,
               type=click.Path(exists=True), show_default=True)
 @click.option('--errors', help='Output file path for pmids which failed to fetch', default=DEFAULT_ERROR_FILE,
@@ -31,7 +32,7 @@ def main():
 )
 @click.option('--maxtries', help='Max number of tries per article', default=3, type=int, show_default=True)
 @click.option('-v', '--verbose', help='Log everything', is_flag=True)
-def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
+def pdf(pmids, pmidsfile, keyword, out, errors, exported, maxtries, verbose):
     """Get PDFs from PubMed idenfiers."""
 
     if verbose:
@@ -41,12 +42,18 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
         logger.setLevel(logging.INFO)
 
     # Checking arguments
-    if not pmids and not pmidsfile:
-        click.echo("Error: One of the two arguments '--pmids' or '--pmidsfile' must be used. Exiting...")
+    if not pmids and not pmidsfile and not keyword:
+        click.echo("Error: One of the two arguments '--pmids' or '--pmidsfile' or '--keyword' must be used. Exiting...")
         exit(1)
     if pmids and pmidsfile:
         click.echo("Error: --pmids and --pmidsfile cannot be used together. Please select only one. Exiting...")
         exit(1)
+    if pmids and keyword:
+        click.echo("Error: --pmids and --keyword cannot be used together. Please select only one. Exiting...")
+        exit(1)
+    if keyword and pmidsfile:
+        click.echo("Error: --keyword and --pmidsfile cannot be used together. Please select only one. Exiting...")
+        exit(1)                
 
     if not os.path.exists(out):
         click.echo(f"Output directory of {out} did not exist.  Created the directory.")
@@ -74,6 +81,9 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
         # Split by comma the pubmeds
         pmids = [i.strip() for i in pmids.split(",")]
         names = pmids
+    elif keyword:
+        pmids = search_by_keyword(keyword)
+        names = [x for x in pmids]
     else:
         # Read file and get the pubmeds
         pmids = [
